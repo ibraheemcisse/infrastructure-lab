@@ -26,6 +26,12 @@ Each postmortem follows SRE best practices:
 *Date: 2025-01-19 | Duration: 8 hours | Impact: Complete system loss*  
 Applied untested network config to live system, lost SSH access, recovered via rebuild.
 
+### Medium Severity
+
+**002** - [Firewall IP Restriction Lockout](002-firewall-ip-lockout.md)  
+*Date: 2025-01-21 | Duration: 2 hours | Impact: Web UI access blocked*  
+Home IP changed, firewall blocked access. Resolved by implementing Tailscale VPN.
+
 ---
 
 ## Severity Definitions
@@ -34,6 +40,15 @@ Applied untested network config to live system, lost SSH access, recovered via r
 **High:** Major functionality impaired, workarounds exist  
 **Medium:** Degraded performance or partial functionality loss  
 **Low:** Minor issues with minimal impact  
+
+## Key Lessons
+
+**From incidents 001-002:**
+- Test network changes incrementally
+- Design for operational simplicity
+- Choose permanent solutions over quick fixes
+- Fix root causes, not symptoms
+- Invest in proper infrastructure from the start
 
 ## Postmortem Template
 
