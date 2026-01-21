@@ -1,125 +1,154 @@
+# Infrastructure Build Log
 
-### Debian Installation Started
+## Phase 1: Foundation (Jan 20, 2025)
 
-**Time:** [Current time]
-
-**Configuration:**
-- Drives: 2x NVMe 512GB RAID1
-- Partitions:
-  - /boot: 1GB (md0)
-  - LVM (md1):
-    - root: 96GB → /
-    - swap: 8GB
-    - data: 370GB → /var/lib/vz
-- OS: Debian 12 Bookworm
-- Hostname: pve
-
-**Issues encountered:**
-1. LV "all" size must be on last partition - FIXED
-2. Conflicting PART definitions at bottom - FIXED (commented out)
-
-**Installation running...**
-
-### Debian Installation Complete ✅
-
-**Completion time:** [11:44]
-**Duration:** ~[1] minutes
-
-**Verification:**
-- RAID arrays created: md0 (/boot), md1 (LVM)
-- LVM volumes: root, swap, data
-- Bootloader installed
-- System ready for Proxmox
-
-**Next:** Reboot into Debian, then install Proxmox VE
-
-### Debian System Booted ✅
-
-**Time:** [TIME]
-
-**Verified:**
-- SSH access working
-- RAID arrays healthy
-- LVM volumes mounted
-- Network connectivity confirmed
-- Hostname: pve
-
-**Next:** Install Proxmox VE on top of Debian
-
-### Debian System Booted ✅
-
-**Time:** [11:58 UTC]
-
-**Verified:**
-- SSH access working
-- RAID arrays healthy
-- LVM volumes mounted
-- Network connectivity confirmed
-- Hostname: pve
-
-**Next:** Install Proxmox VE on top of Debian
-
-### Proxmox VE Installation ✅
-
-**Completion time:** [TIME]
-
-**Installed:**
-- Proxmox VE 8.4.16
-- Kernel: 6.8.12-18-pve
-
-**Network Configuration:**
-- vmbr0: 203.0.113.10/26 (public bridge)
-- vmbr1: 10.0.0.1/24 (NAT bridge for VMs)
-- NAT routing configured and tested
-
-**Access:**
-- SSH: root@203.0.113.10 (key-based)
-- Web UI: https://203.0.113.10:8006
-
-**Status:** 
-- ✅ All systems operational
-- ✅ Ready for VM creation
+### Objective
+Build bare metal Proxmox VE platform with production-like networking.
 
 ---
 
-## Phase 1 Complete: Infrastructure Foundation
+## Architecture Decisions
 
-**Time invested:** ~3 hours
-**Result:** Production-ready virtualization platform
+### Storage Strategy
+**RAID1 on 2x NVMe:**
+- Mirrored for redundancy
+- 476GB → 360GB usable after system partitions
+- Layout: 96GB root, 20GB swap, 360GB VM storage
 
-**Next session:** Create test VM with NAT networking
+**Rationale:**
+- Lab can afford 50% capacity loss
+- Demonstrates production patterns
+- Easy to rebuild if drive fails
 
-### Test VM with NAT Verification ✅
+### Network Strategy
+**Dual-bridge approach:**
 
-**Time:** [CURRENT TIME]
+**vmbr0 (Public bridge):**
+- Proxmox host management
+- Bound to physical NIC
+- Public IP: 203.0.113.10/26 (sanitized)
 
-**VM Specs:**
-- Name: test-vm
-- OS: Ubuntu 24.04 LTS
-- CPU: 1 vCPU
-- RAM: 2GB
-- Disk: 10GB
-- Network: vmbr1 (NAT bridge)
-- IP: 10.0.0.10/24
+**vmbr1 (NAT bridge):**
+- VM internet access
+- Private network: 10.0.0.0/24
+- NAT/MASQUERADE to vmbr0
 
-**NAT Validation Tests:**
+**Rationale:**
+- Management isolated from VM network
+- VMs don't need public IPs
+- Mirrors production DMZ patterns
+
+---
+
+## Implementation Notes
+
+### Debian Installation
+**Method:** Hetzner installimage with custom config
+
+**Key config changes:**
+- Hostname: pve
+- LVM volumes: root (96G), swap (8G→20G auto-adjusted), data (all)
+- RAID level: 1 (mirroring)
+
+**Issue encountered:**
+```
+ERROR: Partition size "all" has to be on the last partition
+```
+**Cause:** data LV not last in definition order  
+**Fix:** Reordered LV lines, commented out conflicting PART definitions
+
+### Proxmox Installation
+**Method:** Add Proxmox repo to Debian, apt install
 ```bash
-✅ IP address: 10.0.0.10 (correct)
-✅ Gateway: 10.0.0.1 (Proxmox host)
-✅ Ping gateway: SUCCESS
-✅ Ping internet: 8.8.8.8 SUCCESS
-✅ DNS resolution: google.com SUCCESS
+curl -fsSL https://enterprise.proxmox.com/debian/proxmox-release-bookworm.gpg \
+  -o /etc/apt/trusted.gpg.d/proxmox-release-bookworm.gpg
+
+echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" \
+  > /etc/apt/sources.list.d/pve-install-repo.list
+
+apt update && apt full-upgrade -y
+apt install proxmox-ve postfix open-iscsi chrony -y
+reboot
 ```
 
-**Network flow confirmed:**
-```
-VM (10.0.0.10) 
-  → vmbr1 bridge
-  → iptables NAT MASQUERADE
-  → vmbr0 (public IP)
-  → Internet
+**Result:** Proxmox VE 8.4.16, kernel 6.8.12-18-pve
+
+### Network Configuration
+**Applied config incrementally:**
+
+1. Brought up vmbr0 (public) first
+2. Tested connectivity before proceeding
+3. Brought up vmbr1 (NAT) separately
+4. Verified iptables NAT rules active
+
+**Lesson from first attempt:**
+- Never apply both bridges simultaneously without testing
+- Use `ifup --no-act` to validate syntax
+- Test one change at a time
+
+**Validation:**
+```bash
+ip addr show vmbr0  # Shows public IP
+ip addr show vmbr1  # Shows 10.0.0.1
+iptables -t nat -L POSTROUTING  # Shows MASQUERADE rule
 ```
 
-**Status:** NAT networking fully operational
+---
 
-**Next:** Firewall configuration for management plane security
+## Test VM Validation
+
+**Created Ubuntu 24.04 VM:**
+- Network: vmbr1 (NAT)
+- IP: 10.0.0.10/24
+- Gateway: 10.0.0.1
+
+**NAT validation:**
+```bash
+ibrahim@test-vm:~$ ping -c 1 8.8.8.8
+1 packets transmitted, 1 received, 0% packet loss
+
+ibrahim@test-vm:~$ ping -c 1 google.com  
+1 packets transmitted, 1 received, 0% packet loss
+```
+
+**Result:** NAT networking fully functional ✅
+
+---
+
+## Lessons Learned
+
+### What Worked
+- Incremental network config application
+- Testing each bridge independently  
+- Documenting decisions in real-time
+- Version controlling all configs
+
+### What Failed (First Attempt)
+- Applying complete network config to live system
+- No rollback plan when iptables rules broke connectivity
+- Spent 8+ hours trying to recover broken boot
+
+### Key Insight
+**Recovery time > Rebuild time**
+
+Lesson: When state is unknown and documentation is solid, rebuild is often faster than archaeology.
+
+---
+
+## Status: Phase 1 Complete
+
+**Functional:**
+- ✅ Proxmox VE operational
+- ✅ Dual-bridge networking
+- ✅ NAT validated with test VM
+- ✅ All infrastructure documented
+
+**Security gaps (Phase 2):**
+- ⚠️ Management UI exposed on public IP
+- ⚠️ No firewall configured
+- ⚠️ Root SSH unrestricted
+
+**Next:**
+- Firewall configuration (UFW)
+- Management access restrictions
+- K8s cluster deployment
