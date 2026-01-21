@@ -68,13 +68,13 @@
 - Kernel: 6.8.12-18-pve
 
 **Network Configuration:**
-- vmbr0: 136.243.171.177/26 (public bridge)
+- vmbr0: 203.0.113.10/26 (public bridge)
 - vmbr1: 10.0.0.1/24 (NAT bridge for VMs)
 - NAT routing configured and tested
 
 **Access:**
-- SSH: root@136.243.171.177 (key-based)
-- Web UI: https://136.243.171.177:8006
+- SSH: root@203.0.113.10 (key-based)
+- Web UI: https://203.0.113.10:8006
 
 **Status:** 
 - ✅ All systems operational
