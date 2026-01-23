@@ -1,0 +1,14 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Actual config with real values
+terraform.tfvars
+
+# Backups and auto-generated
+terraform.tfvars.backup
+*.auto.tfvars
+crash.log
+terraform-plugin-proxmox.log
