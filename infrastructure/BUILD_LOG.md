@@ -171,3 +171,45 @@ Lesson: When state is unknown and documentation is solid, rebuild is often faste
 
 **Starting:** [DATE]
 **Goal:** 3-node K8s cluster provisioned via Terraform
+
+## Week 2: Kubernetes Infrastructure (Day 1)
+
+### VMs Created Successfully
+
+**Date:** January 23, 2026
+
+Created 3 VMs through Proxmox UI for Kubernetes cluster:
+
+**k8s-master-01 (VM 101):**
+- IP: 10.0.0.11/24
+- Resources: 2 vCPU, 12GB RAM, 50GB disk
+- Purpose: Kubernetes control plane
+- Status: ✅ Running, SSH configured
+
+**k8s-worker-01 (VM 102):**
+- IP: 10.0.0.12/24
+- Resources: 4 vCPU, 16GB RAM, 100GB disk
+- Purpose: Kubernetes worker node
+- Status: ✅ Running, SSH configured
+
+**k8s-worker-02 (VM 103):**
+- IP: 10.0.0.13/24
+- Resources: 4 vCPU, 16GB RAM, 100GB disk
+- Purpose: Kubernetes worker node
+- Status: ✅ Running, SSH configured
+
+**Network Configuration:**
+- All nodes on vmbr1 (NAT bridge)
+- Gateway: 10.0.0.1 (Proxmox host)
+- DNS: 8.8.8.8, 8.8.4.4
+- Internet: ✅ Working via NAT
+
+**SSH Access:**
+- SSH keys copied to all nodes
+- Accessible via ProxyJump through Proxmox
+- Passwordless sudo configured on all nodes
+- Command: `ssh -J root@100.121.221.116 ibrahim@10.0.0.1X`
+
+**Ready for:** Kubernetes deployment with Kubespray
+
+**Time to create:** ~2 hours (including parallel installations)
