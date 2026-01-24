@@ -284,3 +284,27 @@ node3   Ready    <none>          48m   v1.28.6
 - Total Week 2 so far: 4 hours
 
 **Status:** Cluster operational, ready for application deployment
+
+### CoreDNS Fixed - Cluster 100% Healthy ✅
+
+**Issue:** CoreDNS was in CrashLoopBackOff due to DNS forwarding loop
+**Root Cause:** CoreDNS ConfigMap forwarding to `/etc/resolv.conf` which pointed back to CoreDNS
+**Fix:** Changed CoreDNS forward directive from `/etc/resolv.conf` to `8.8.8.8 8.8.4.4`
+
+**Result:** All 18 system pods Running, cluster fully operational
+
+**Final Cluster Status:**
+```
+NAMESPACE     PODS    STATUS
+kube-system   18/18   Running ✅
+```
+
+**Week 2 Status: COMPLETE** ✅
+
+**Time to complete:**
+- VM provisioning: 2 hours
+- Kubernetes deployment: 2 hours
+- DNS troubleshooting: 15 mins
+- **Total: ~4.5 hours**
+
+**Next:** Week 3 - Monitoring Stack (Prometheus + Grafana)
