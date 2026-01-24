@@ -32,23 +32,58 @@ Applied untested network config to live system, lost SSH access, recovered via r
 *Date: 2025-01-21 | Duration: 2 hours | Impact: Web UI access blocked*  
 Home IP changed, firewall blocked access. Resolved by implementing Tailscale VPN.
 
+**004** - [CoreDNS CrashLoopBackOff](004-coredns-loop-detection.md)  
+*Date: 2025-01-24 | Duration: 15 minutes | Impact: DNS broken*  
+DNS forwarding loop. Fixed by updating CoreDNS ConfigMap to use public DNS servers.
+
+### Low Severity
+
+**003** - [Kubespray Deployment Duration](003-kubespray-slow-deployment.md)  
+*Date: 2025-01-24 | Duration: 2 hours | Impact: Extended deployment time*  
+First-time K8s deployment took 2+ hours vs expected 20-30 mins. Deployment succeeded.
+
 ---
 
-## Severity Definitions
+## Key Lessons Across All Incidents
 
-**Critical:** Complete loss of system access or functionality  
-**High:** Major functionality impaired, workarounds exist  
-**Medium:** Degraded performance or partial functionality loss  
-**Low:** Minor issues with minimal impact  
+**Network/Infrastructure:**
+- Test changes incrementally
+- Have rollback plans
+- Monitor during changes
+- Document everything
 
-## Key Lessons
+**Deployment/Configuration:**
+- Set realistic time expectations
+- Validate after deployment
+- Use explicit configurations (avoid defaults)
+- Check logs immediately
 
-**From incidents 001-002:**
-- Test network changes incrementally
-- Design for operational simplicity
-- Choose permanent solutions over quick fixes
-- Fix root causes, not symptoms
-- Invest in proper infrastructure from the start
+**Mindset:**
+- Patience often beats premature intervention
+- Systematic debugging > random fixes
+- Documentation enables fast recovery
+- Learn from every incident
+
+---
+
+## Statistics
+
+**Total Incidents:** 4  
+**Critical:** 1 (25%)  
+**Medium:** 2 (50%)  
+**Low:** 1 (25%)  
+
+**Average Resolution Time:**  
+- Critical: 8 hours (001)  
+- Medium: 1 hour avg (002, 004)  
+- Low: 2+ hours (003 - not really resolution, just completion)
+
+**Success Rate:**  
+- 4/4 incidents resolved successfully (100%)  
+- 0 incidents required external support
+- All resolutions documented
+
+---
 
 ## Postmortem Template
 
