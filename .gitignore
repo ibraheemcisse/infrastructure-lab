@@ -1,0 +1,6 @@
+
+# Kubespray (large repo, don't commit)
+kubespray/
+
+# Kubernetes config with real IPs
+.kube/

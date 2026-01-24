@@ -233,3 +233,54 @@ Created 3 VMs through Proxmox UI for Kubernetes cluster:
 **Ready for:** Ansible playbook execution to deploy K8s
 
 **Documentation:** kubernetes/KUBESPRAY_SETUP.md
+
+### Kubernetes Cluster Deployed Successfully ✅
+
+**Date:** January 24, 2026  
+**Duration:** ~2 hours (Kubespray deployment)
+
+**Cluster Status:**
+- ✅ 3 nodes deployed and Ready
+- ✅ Kubernetes v1.28.6 running
+- ✅ Calico CNI installed and working
+- ✅ Control plane healthy (kube-apiserver, scheduler, controller-manager)
+- ✅ All worker nodes joined successfully
+- ⚠️ CoreDNS in CrashLoopBackOff (to be fixed)
+
+**Nodes:**
+```
+NAME    STATUS   ROLES           AGE   VERSION
+node1   Ready    control-plane   57m   v1.28.6
+node2   Ready    <none>          48m   v1.28.6
+node3   Ready    <none>          48m   v1.28.6
+```
+
+**Components Running:**
+- kube-apiserver: ✅ Running
+- kube-controller-manager: ✅ Running  
+- kube-scheduler: ✅ Running
+- kube-proxy: ✅ Running (all nodes)
+- calico-node: ✅ Running (all nodes)
+- calico-kube-controllers: ✅ Running
+- nginx-proxy: ✅ Running (workers)
+- nodelocaldns: ✅ Running (all nodes)
+- dns-autoscaler: ✅ Running
+- coredns: ⚠️ CrashLoopBackOff (needs troubleshooting)
+
+**Access:**
+- kubeconfig copied to laptop: ~/.kube/config
+- Control from laptop: `kubectl get nodes`
+- SSH to master: `ssh -J root@100.121.221.116 ibrahim@10.0.0.11`
+
+**Next Steps:**
+1. Fix CoreDNS CrashLoopBackOff issue
+2. Verify DNS resolution working
+3. Deploy test application
+4. Deploy Healthcare API
+
+**Time Investment:** 
+- VM creation: 2 hours
+- Kubespray deployment: 2 hours
+- Total Week 2 so far: 4 hours
+
+**Status:** Cluster operational, ready for application deployment
