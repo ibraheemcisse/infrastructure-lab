@@ -308,3 +308,46 @@ kube-system   18/18   Running ✅
 - **Total: ~4.5 hours**
 
 **Next:** Week 3 - Monitoring Stack (Prometheus + Grafana)
+
+## Week 3: Monitoring Stack Deployed ✅
+
+**Date:** January 25, 2026  
+**Duration:** ~1 hour
+
+**Deployed Components:**
+- Prometheus (metrics collection)
+- Grafana (visualization)
+- Node Exporter (host metrics on all 3 nodes)
+- kube-state-metrics (K8s object metrics)
+- Alertmanager (deployed, not configured)
+
+**All Pods Running:**
+```
+monitoring namespace: 8/8 pods Running
+- prometheus-0 (2/2)
+- alertmanager-0 (2/2)
+- grafana (3/3)
+- kube-prometheus-operator (1/1)
+- kube-state-metrics (1/1)
+- node-exporter x3 (1/1 each)
+```
+
+**Access Method:**
+- Grafana via double SSH tunnel (port 3000)
+- Pre-installed dashboards showing cluster metrics
+- Login: admin / admin123
+
+**What's Being Monitored:**
+- Node-level: CPU, RAM, disk, network (all 3 nodes)
+- K8s-level: Pods, deployments, nodes status
+- Container-level: Per-pod resources
+
+**Status:** Week 3 Complete - Monitoring operational ✅
+
+**Next:** Week 4 - Deploy Healthcare API + PostgreSQL + CI/CD
+
+**Time Investment:**
+- Week 1: 4 hours (infrastructure)
+- Week 2: 6 hours (Kubernetes)
+- Week 3: 1 hour (monitoring)
+- **Total: 11 hours**
