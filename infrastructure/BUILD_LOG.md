@@ -351,3 +351,32 @@ monitoring namespace: 8/8 pods Running
 - Week 2: 6 hours (Kubernetes)
 - Week 3: 1 hour (monitoring)
 - **Total: 11 hours**
+
+## Week 4 Day 1: Healthcare API Deployed ✅
+
+**Date:** January 26, 2026  
+**Duration:** 1 hour
+
+**Accomplished:**
+- Containerized Healthcare FastAPI application
+- Built Docker image with multi-stage optimization
+- Pushed to Docker Hub: `ibraheemcisse/healthcare-api:latest`
+- Created Kubernetes Deployment (2 replicas)
+- Created Kubernetes Service (ClusterIP)
+- Deployed to cluster successfully
+- Tested CRUD operations (patient creation/listing)
+
+**API Status:**
+```
+Deployment: 2/2 pods Running
+Service: ClusterIP 10.233.35.94:80
+Endpoints: /health, /, /patients, /appointments
+```
+
+**Test Results:**
+- Health check: ✅ Working
+- Patient creation: ✅ Working
+- Patient listing: ✅ Working
+- API running in K8s: ✅ Confirmed
+
+**Next:** Add PostgreSQL database (Week 4 Day 2)
