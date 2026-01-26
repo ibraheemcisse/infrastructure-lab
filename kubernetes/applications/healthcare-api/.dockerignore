@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Data files (not needed in container)
+*.json
+patients.json
+clinic_data.json
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
+test_*.py
+phase*.py
+practice.py
+
+# Documentation
+README.md
