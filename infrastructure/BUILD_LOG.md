@@ -408,3 +408,46 @@ Location: node2:/data/postgres
 - Set proper ownership (999:999 for postgres user)
 
 **Next:** Connect Healthcare API to PostgreSQL (Week 4 Day 3)
+
+### Week 4 Day 3: API + PostgreSQL + CI/CD Complete ✅
+
+**Date:** January 27, 2026  
+**Duration:** 2.5 hours
+
+**Accomplished:**
+- Updated Healthcare API to use PostgreSQL instead of JSON files
+- Rebuilt Docker image v0.2.0 with database support
+- Deployed updated API to Kubernetes (rolling update)
+- Tested API with PostgreSQL - data persists across pod restarts
+- Created CI/CD pipeline with GitHub Actions
+- Pipeline builds and pushes images automatically on git push
+
+**API v0.2.0 Features:**
+- SQLAlchemy ORM integration
+- PostgreSQL connection pooling
+- UUID primary keys
+- Timestamp tracking
+- Foreign key relationships (patients → appointments)
+
+**CI/CD Pipeline:**
+- Triggers on push to master branch
+- Builds Docker image with BuildKit caching
+- Pushes to Docker Hub with git SHA tag + latest
+- Automated image builds working ✅
+
+**Testing Results:**
+- Created patients in PostgreSQL ✅
+- Data persists across pod restarts ✅
+- Database queries working ✅
+- API health checks passing ✅
+
+**Week 4 Status: COMPLETE** ✅
+
+**Next:** Week 5 - Chaos Engineering + Documentation
+
+**Total Time Investment:**
+- Week 1: 4 hours
+- Week 2: 6 hours
+- Week 3: 1 hour
+- Week 4: 5 hours
+- **Total: 16 hours**
