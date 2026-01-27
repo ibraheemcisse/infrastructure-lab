@@ -380,3 +380,31 @@ Endpoints: /health, /, /patients, /appointments
 - API running in K8s: ✅ Confirmed
 
 **Next:** Add PostgreSQL database (Week 4 Day 2)
+
+### Week 4 Day 2: PostgreSQL Database Deployed ✅
+
+**Date:** January 27, 2026  
+**Duration:** 1.5 hours
+
+**Accomplished:**
+- Created local-path StorageClass for persistent volumes
+- Deployed PostgreSQL 15 with 5Gi persistent storage
+- Initialized database schema (patients, appointments tables)
+- Configured database on node2 with proper permissions
+- Verified database connectivity and schema
+
+**Database Status:**
+```
+Pod: postgres-84fd6557b7-h928h - Running
+PVC: postgres-pvc - Bound to postgres-pv (5Gi)
+Tables: patients, appointments
+Location: node2:/data/postgres
+```
+
+**Troubleshooting:**
+- Resolved missing StorageClass (created local-path)
+- Created PersistentVolume manually
+- Fixed missing /data/postgres directory on node2
+- Set proper ownership (999:999 for postgres user)
+
+**Next:** Connect Healthcare API to PostgreSQL (Week 4 Day 3)
