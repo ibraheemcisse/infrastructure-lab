@@ -325,3 +325,17 @@ Normal   Pulled     Successfully pulled image
 **Test conducted by:** Ibrahim Cisse  
 **Date:** 2026-01-28  
 **Status:** Complete ✅
+
+## Grafana Evidence
+
+**Pod Restart Count Over Time:**
+
+![Pod Restart Spike](../screenshots/005-pod-restart-spike.png)
+
+**Observations:**
+- Clear staircase pattern showing exponential backoff
+- Restart count: 0 → 5 over ~4 minutes
+- Each step represents a restart attempt with increasing delay
+- Pattern validates Kubernetes backoff algorithm
+- Other pods (not shown) remained at 0 restarts
+
