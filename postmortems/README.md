@@ -88,3 +88,14 @@ First-time K8s deployment took 2+ hours vs expected 20-30 mins. Deployment succe
 ## Postmortem Template
 
 For future incidents, use: `postmortems/TEMPLATE.md`
+
+## 008 - Memory OOM Kill (Chaos Test)
+**Date:** 2026-01-30  
+**Type:** Chaos Engineering  
+**Severity:** Medium
+
+Triggered Out of Memory kill by allocating 200MB against 128Mi limit. Pod killed with exit code 137 (OOMKilled), automatically restarted by Kubernetes in 10 seconds. Validated self-healing and multi-replica resilience.
+
+**Key learnings:** Memory limits are hard ceilings (kill, not throttle), multi-replica essential for availability, exit code 137 = OOM kill.
+
+**File:** [008-memory-oom-chaos.md](008-memory-oom-chaos.md)
