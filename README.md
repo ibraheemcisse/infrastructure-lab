@@ -1,208 +1,215 @@
 # Infrastructure Lab
 
-Bare-metal Kubernetes platform demonstrating security-hardened deployments, chaos engineering, and operational documentation.
+Bare-metal Kubernetes platform demonstrating **security-hardened workloads**, **observability-driven operations**, and **chaos-validated resilience**.
 
-**What this is:** A homelab where I learn by breaking things on purpose.
-
-**What this isn't:** Enterprise production infrastructure.
+**What this is:** A homelab used to learn by intentionally breaking systems.  
+**What this is not:** Enterprise production infrastructure.
 
 ---
 
 ## Stack
 
-**Physical:** Hetzner dedicated server (i7-6700, 64GB RAM)  
-**Virtualization:** Proxmox VE  
-**Orchestration:** Kubernetes 1.28 (3 nodes, Kubespray)  
-**CNI:** Calico  
-**Observability:** Prometheus + Grafana  
-**Applications:** FastAPI + PostgreSQL  
+- **Physical:** Hetzner Dedicated (i7-6700, 64GB RAM)
+- **Hypervisor:** Proxmox VE
+- **Kubernetes:** v1.28 (3 nodes, Kubespray)
+- **CNI:** Calico
+- **Observability:** Prometheus + Grafana
+- **Applications:** FastAPI, PostgreSQL
 
 ---
 
 ## Architecture
 ```
-┌─────────────────────────────────────────┐
-│ Proxmox Host (Hetzner)                  │
-│                                         │
-│  ┌──────────┐  ┌─────────┐  ┌────────┐│
-│  │ k8s-cp-1 │  │ k8s-w-1 │  │k8s-w-2 ││
-│  │ Control  │  │ Worker  │  │Worker  ││
-│  └──────────┘  └─────────┘  └────────┘│
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ Proxmox Host (Hetzner)                      │
+│                                             │
+│  ┌──────────┐  ┌─────────┐  ┌──────────┐  │
+│  │ k8s-cp-1 │  │ k8s-w-1 │  │ k8s-w-2  │  │
+│  │ Control  │  │ Worker  │  │ Worker   │  │
+│  └──────────┘  └─────────┘  └──────────┘  │
+└─────────────────────────────────────────────┘
          │
-         ├─> Applications (healthcare-api)
-         ├─> PostgreSQL (StatefulSet)
-         └─> Monitoring (Prometheus/Grafana)
+         ├─ Applications (healthcare-api)
+         ├─ PostgreSQL (StatefulSet)
+         └─ Monitoring (Prometheus/Grafana)
 ```
+
+Single-cluster, single-region, single-control-plane by design.
 
 ---
 
 ## Security Posture
 
-**Assumptions:**
-- Any pod can be compromised
-- Internal traffic is untrusted
-- This repo is public
+### Assumptions
+- Any pod may be compromised  
+- Internal traffic is untrusted  
+- Repository is public  
 
-**Controls:**
-- Non-root containers
-- Read-only filesystems
-- Dropped capabilities
-- Secrets via Kubernetes Secret objects
-- RBAC-restricted ServiceAccounts
-- NetworkPolicies for pod isolation
-- No secrets in git
+### Controls
+- Non-root containers  
+- Read-only root filesystems  
+- Dropped Linux capabilities  
+- RuntimeDefault seccomp  
+- Secrets via Kubernetes Secrets  
+- Dedicated ServiceAccounts  
+- RBAC least privilege  
+- NetworkPolicies for isolation  
+- No secrets in Git  
 
 **Goal:** Reduce blast radius, not eliminate risk.
 
 ---
 
-## What I Built
+## What Exists
 
-**Infrastructure:**
-- 3-node Kubernetes cluster (bare metal)
-- Terraform provisioning (Proxmox)
-- StatefulSet database deployment
-- Local persistent storage
+### Infrastructure
+- 3-node Kubernetes cluster
+- Terraform VM provisioning (Proxmox)
+- Kubespray bootstrap
+- Local persistent volumes
 
-**Security:**
-- Pod security contexts (non-root, read-only FS, seccomp)
-- Dedicated ServiceAccounts with minimal RBAC
-- Secrets management (no hardcoded credentials)
+### Security
+- Pod security contexts
+- Minimal ServiceAccounts
+- Secret-based configuration
 - Network isolation
 
-**Observability:**
-- Prometheus metrics collection
-- Grafana dashboards (nodes, pods, PostgreSQL)
-- postgres_exporter for database metrics
+### Observability
+- Prometheus
+- Grafana dashboards
+- postgres_exporter
 
-**Operations:**
-- CI/CD pipeline (GitHub Actions)
-- Chaos engineering (5 documented failure scenarios)
+### Operations
+- GitHub Actions CI/CD
+- Chaos testing
 - SRE-style postmortems
 
 ---
 
 ## Chaos Tests
 
-I intentionally broke things to understand failure modes:
+1. Pod CrashLoopBackOff (bad rollout)
+2. Node failure (local storage outage)
+3. Deployment → StatefulSet migration
+4. Memory OOM kill
+5. PostgreSQL monitoring instrumentation
 
-1. **Pod CrashLoopBackOff** - Bad deployment during rolling update
-2. **Node Failure** - 25-hour outage from local storage limitation
-3. **StatefulSet Migration** - Deployment → StatefulSet conversion
-4. **Memory OOM** - Out of memory kill and self-healing
-5. **PostgreSQL Monitoring** - Database observability setup
-
-Each test has a postmortem in `/postmortems/`.
+Postmortems in `/postmortems/`.
 
 ---
 
 ## Key Findings
 
-**Node Failure Test:**
-- Local storage creates single point of failure
-- When node died, PostgreSQL was unavailable for 25 hours
-- Data persisted but was inaccessible until node recovery
-- **Lesson:** Distributed storage or external databases required for HA
+### Node Failure
+- Local PV = single point of failure  
+- PostgreSQL unavailable for 25 hours  
+- Data intact but inaccessible  
 
-**Memory OOM Test:**
-- Kubernetes killed container at memory limit (exit code 137)
-- Self-healing worked (10-second recovery)
-- Multi-replica deployment maintained service availability
-- **Lesson:** Memory limits are hard ceilings, not throttles like CPU
+**Lesson:** HA storage or external DB required for production.
 
-**Cost Optimization:**
-- CPU never the bottleneck (always <25% at breaking point)
-- Database connection pooling was the real limit
-- Infrastructure scaling didn't fix application-level problems
-- **Lesson:** Measure before scaling
+### Memory OOM
+- Container killed at memory limit (137)  
+- Recovered in ~10 seconds  
+- Multi-replica API remained available  
+
+**Lesson:** Memory limits are hard ceilings.
+
+### Cost vs Scaling
+- CPU <25% even at failure point  
+- Bottleneck was DB connections  
+- Infra scaling did not solve problem  
+
+**Lesson:** Measure before scaling.
 
 ---
 
 ## Trade-offs
 
-**Local Storage:**
-- ✅ Fast, simple, no cost
-- ❌ Not HA, tied to single node
-- **Choice:** Acceptable for lab, unacceptable for production
+### Local Storage
+- Fast, simple, free  
+- Not HA  
 
-**Single Control Plane:**
-- ✅ Cheaper, simpler
-- ❌ No HA for control plane
-- **Choice:** Acceptable for lab
+### Single Control Plane
+- Cheaper, simpler  
+- No CP HA  
 
-**Hardcoded Limits:**
-- ✅ Explicit resource boundaries
-- ❌ Not dynamic
-- **Choice:** Intentional for learning
+### Static Resource Limits
+- Explicit boundaries  
+- Not dynamic  
+
+All intentional for lab.
 
 ---
 
-## Repository Structure
+## Repository Layout
 ```
 infrastructure/
-├── terraform/          # VM provisioning
-└── BUILD_LOG.md        # Chronological build notes
+├── terraform/
+└── BUILD_LOG.md
 
 kubernetes/
-├── applications/       # App manifests
+├── applications/
 │   ├── healthcare-api/
 │   └── postgresql/
-└── monitoring/         # Observability stack
+└── monitoring/
 
-postmortems/            # Failure analysis
-└── 001-*.md through 008-*.md
-
-chaos/                  # Test scenarios
-docs/                   # Architecture docs
+postmortems/
+chaos/
+docs/
 ```
 
 ---
 
 ## Rebuild Time
 
-**Target:** < 4 hours (bare metal → working cluster)
+Target: **< 4 hours**  
+Bare metal → functioning cluster
 
-**Validated:** During clean rebuilds
+Validated during clean rebuilds.
 
 ---
 
 ## Related Projects
 
-- [Multi-node K8s with Terraform](https://github.com/ibraheemcisse/multi-node-kubernetes-cluster) - IaC automation
-- [KEDA Autoscaling on EKS](https://github.com/ibraheemcisse/KEDA-HTTP-Add-On-with-Autoscaling-on-Kubernetes-EKS-) - Advanced K8s
+- Multi-node Kubernetes with Terraform  
+  https://github.com/ibraheemcisse/multi-node-kubernetes-cluster
+
+- AWS Infrastructure Trade-offs  
+  https://github.com/ibraheemcisse/devops-dashboard
+
+- KEDA Autoscaling on EKS  
+  https://github.com/ibraheemcisse/KEDA-HTTP-Add-On-with-Autoscaling-on-Kubernetes-EKS-
 
 ---
 
-## What This Lab Demonstrates
+## Demonstrates
 
-- Infrastructure provisioning (Terraform + Kubespray)
-- Kubernetes security hardening
-- Chaos engineering methodology
-- Operational documentation (postmortems)
-- Cost-performance trade-offs
-- Problem-solving under constraints
+- Infrastructure provisioning  
+- Kubernetes security hardening  
+- Chaos engineering  
+- Postmortem-driven improvement  
+- Cost/performance analysis  
 
 ---
 
-## What This Lab Does NOT Demonstrate
+## Does NOT Demonstrate
 
-- Multi-region HA
-- Managed cloud services (EKS, GKE)
-- Enterprise-scale operations
-- Perfect security
+- Multi-region HA  
+- Managed cloud platforms  
+- Enterprise-scale ops  
+- Perfect security  
 
-**This is a learning environment, not a reference architecture.**
+Learning environment, not reference architecture.
 
 ---
 
 ## Philosophy
 
-- Security is a posture, not a feature
-- Documentation must reflect reality
-- Chaos testing validates assumptions
-- Trade-offs should be explicit
-- Complexity requires justification
+- Security is a posture  
+- Documentation reflects reality  
+- Chaos validates assumptions  
+- Trade-offs must be explicit  
+- Complexity requires justification  
 
 ---
 
