@@ -6,7 +6,7 @@
 **User:** healthcare_user  
 **Storage:** 5Gi persistent volume on node2
 
----
+--
 
 ## Monitoring Setup
 
