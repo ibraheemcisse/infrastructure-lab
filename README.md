@@ -25,6 +25,8 @@ This lab exists to answer: "What would I do differently if I had to rebuild this
 
 ## Stack
 
+![Architecture Diagram](../diagram-export-1-29-2026-6_36_57-PM.png.) 
+
 - **Physical:** Hetzner Dedicated (i7-6700, 64GB RAM)
 - **Hypervisor:** Proxmox VE
 - **Kubernetes:** v1.28 (3 nodes, Kubespray)
