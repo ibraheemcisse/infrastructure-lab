@@ -1,289 +1,209 @@
-# Infrastructure Lab
+# Infrastructure Lab  
+**Bare Metal → Proxmox → Kubernetes → Observability → Failure**
 
-**Target roles:** Platform Engineer, SRE, Infrastructure Engineer
+**Target roles:** Platform Engineer · SRE · Infrastructure Engineer  
+**Video walkthrough:** https://youtu.be/4DzHJQIVU0g
 
-Bare-metal Kubernetes platform demonstrating **security-hardened workloads**, **observability-driven operations**, and **chaos-validated resilience**.
+A production-style Kubernetes platform built from bare metal to validate **capacity planning, security posture, observability, and failure modes** under real workloads.
 
-**What this is:** A homelab used to learn by intentionally breaking systems.  
-**What this is not:** Enterprise production infrastructure.
-
----
-
-## Why I Built This
-
-I wanted to understand Kubernetes beyond managed services. Running K8s on bare metal forces you to make decisions that cloud providers abstract away:
-
-- How do you provision storage when there's no EBS?
-- What happens when a node dies and you can't just spin up another?
-- How do you secure workloads when you control the entire stack?
-
-I also wanted to practice chaos engineering - intentionally breaking systems to understand failure modes before they happen in production. Reading about database failover is different from watching your PostgreSQL become unavailable for 25 hours because of a storage architecture decision.
-
-This lab exists to answer: "What would I do differently if I had to rebuild this in production?"
+This is a **learning and validation environment**, not a reference production architecture.
 
 ---
 
-## Stack
+## Why This Exists
 
-![Architecture Diagram](screenshots/diagram-export-1-29-2026-6_36_57-PM.png)
+Managed Kubernetes hides the hardest decisions.
 
-- **Physical:** Hetzner Dedicated (i7-6700, 64GB RAM)
-- **Hypervisor:** Proxmox VE
-- **Kubernetes:** v1.28 (3 nodes, Kubespray)
-- **CNI:** Calico
-- **Observability:** Prometheus + Grafana
-- **Applications:** FastAPI, PostgreSQL
+This lab exists to force those decisions into the open:
 
----
+- Storage without EBS  
+- Failure without autoscaling safety nets  
+- Security when you control the entire stack  
+- Capacity planning before scale  
+- Observability before incident response  
 
-## Architecture
-```
-┌─────────────────────────────────────────────┐
-│ Proxmox Host (Hetzner)                      │
-│                                             │
-│  ┌──────────┐  ┌─────────┐  ┌──────────┐  │
-│  │ k8s-cp-1 │  │ k8s-w-1 │  │ k8s-w-2  │  │
-│  │ Control  │  │ Worker  │  │ Worker   │  │
-│  └──────────┘  └─────────┘  └──────────┘  │
-└─────────────────────────────────────────────┘
-         │
-         ├─ Applications (healthcare-api)
-         ├─ PostgreSQL (StatefulSet)
-         └─ Monitoring (Prometheus/Grafana)
-```
+The goal is simple:
 
-Single-cluster, single-region, single-control-plane by design.
+> **Expose bad assumptions early, document the consequences, and decide what would change in production.**
 
 ---
 
-## Security Posture
+## High-Level Architecture
 
-### Assumptions
-- Any pod may be compromised  
-- Internal traffic is untrusted  
-- Repository is public  
+- **Bare metal:** Hetzner dedicated server  
+- **Hypervisor:** Proxmox VE  
+- **Kubernetes:** v1.28, 3 VMs, bootstrapped with Kubespray  
+- **Networking:** Calico  
+- **Observability:** Prometheus + Grafana  
+- **Workloads:** FastAPI (healthcare API), PostgreSQL (StatefulSet)  
 
-### Controls
-- Non-root containers  
-- Read-only root filesystems  
-- Dropped Linux capabilities  
-- RuntimeDefault seccomp  
-- Secrets via Kubernetes Secrets  
-- Dedicated ServiceAccounts  
-- RBAC least privilege  
-- NetworkPolicies for isolation  
-- No secrets in Git  
+Single cluster, single region, single control plane — by design.
+
+---
+
+## What This Lab Demonstrates
+
+### Platform & Infrastructure
+- Bare-metal virtualization with Proxmox  
+- Capacity planning before cluster creation  
+- Kubernetes bootstrapping with Kubespray  
+- Local PersistentVolumes for stateful workloads  
+
+### Security Engineering
+- Non-root containers and read-only root filesystems  
+- Dropped Linux capabilities with `RuntimeDefault` seccomp  
+- Least-privilege RBAC and dedicated ServiceAccounts  
+- NetworkPolicies for pod-level isolation  
+- No secrets committed to Git  
 
 **Goal:** Reduce blast radius, not eliminate risk.
 
----
-
-## What I Implemented
-
-### Infrastructure
-- Deployed 3-node Kubernetes cluster on bare metal
-- Implemented Terraform-based VM provisioning on Proxmox
-- Configured Kubespray for cluster bootstrapping
-- Provisioned local persistent volumes for stateful workloads
-
-### Security
-- Enforced pod security contexts across all workloads
-- Designed RBAC policies with least-privilege ServiceAccounts
-- Migrated credentials to Kubernetes Secret objects
-- Implemented NetworkPolicies for pod-to-pod isolation
-
 ### Observability
-- Deployed Prometheus for metrics collection
-- Built Grafana dashboards for cluster and application monitoring
-- Integrated postgres_exporter for database performance metrics
+- Cluster and application metrics via Prometheus  
+- Grafana dashboards for infra, app, and database health  
+- PostgreSQL instrumentation with `postgres_exporter`  
+- Metrics-driven debugging instead of guesswork  
 
-### Operations
-- Built GitHub Actions CI/CD pipeline with RBAC-restricted deployments
-- Designed and executed 5 chaos engineering scenarios
-- Documented failures in SRE-style postmortems
+### Operations & Reliability
+- CI/CD using RBAC-restricted ServiceAccounts (no kubeconfig)  
+- Controlled chaos experiments  
+- SRE-style postmortems with root cause analysis  
 
 ---
 
-## Design Decisions & Trade-offs
+## Key Design Decisions (and Why)
 
-### Local Storage
-**Decision:** I provisioned local PersistentVolumes on worker nodes  
+### Local Storage for PostgreSQL
+**Decision:** Local PersistentVolumes on worker nodes  
 
-**Why:**
-- Fast (no network overhead)
-- Simple (no distributed storage complexity)
-- Free (no additional infrastructure)
+- Fast and simple  
+- No distributed storage complexity  
 
-**Trade-off:**
-- Node failure = data unavailable until recovery
-- No automatic failover
-- Single point of failure
+**Trade-off:**  
+- Node failure = database unavailable  
 
-**When to use:** Development, testing, non-critical workloads  
-**When to avoid:** Production databases, stateful applications requiring HA
-
-**What I'd do in production:** Longhorn/Rook for distributed storage, or external managed database
+**Production choice:** Distributed storage (Longhorn / Rook) or external managed database.
 
 ---
 
 ### Single Control Plane
-**Decision:** I deployed one control plane node instead of HA setup
+**Decision:** One control plane node  
 
-**Why:**
-- Cheaper (fewer resources)
-- Simpler (no etcd quorum complexity)
-- Sufficient for learning environment
+- Lower cost  
+- Simpler topology  
 
-**Trade-off:**
-- Control plane downtime = cluster unavailable
-- No resilience to control plane failures
+**Trade-off:**  
+- Control plane downtime = cluster downtime  
 
-**When to use:** Labs, dev environments  
-**When to avoid:** Production
-
-**What I'd do in production:** 3+ control plane nodes with load balancer
+**Production choice:** 3+ control plane nodes behind a load balancer.
 
 ---
 
-### StatefulSet vs Deployment
-**Decision:** I migrated PostgreSQL from Deployment to StatefulSet
+### PostgreSQL as StatefulSet
+**Decision:** StatefulSet instead of Deployment  
 
-**Why:**
-- Stable pod identity (postgres-0 always)
-- Dedicated PVC per pod
-- Ordered startup/shutdown
-- Foundation for replication
+- Stable identity  
+- Ordered lifecycle  
+- Dedicated PVCs  
 
-**Trade-off:**
-- More complex than Deployment
-- Manual PV management (no dynamic provisioner)
+**Trade-off:**  
+- Higher operational complexity  
 
-**When to use:** Databases, stateful applications  
-**When to avoid:** Stateless apps
+Correct choice for databases.
 
 ---
 
-### Security Context Strictness
-**Decision:** I enforced non-root, read-only FS, and dropped all capabilities
+### Strict Security Contexts
+**Decision:** Enforced non-root user, read-only filesystem, dropped capabilities  
 
-**Why:**
-- Reduces attack surface
-- Forces explicit permission requirements
-- Industry best practice
+- Reduced attack surface  
+- Explicit permission requirements  
 
-**Trade-off:**
-- Application compatibility issues
-- Debugging complexity
-- More initial configuration
+**Trade-off:**  
+- Increased setup and debugging effort  
 
-**When to use:** Always  
-**When to avoid:** Never - this should be default
+This should be the default.
 
 ---
 
-### CI/CD with ServiceAccount Tokens
-**Decision:** I implemented RBAC-restricted ServiceAccount instead of kubeconfig
+### CI/CD Without kubeconfig
+**Decision:** RBAC-scoped ServiceAccount tokens  
 
-**Why:**
-- Least privilege (can only patch deployments)
-- Auditable (ServiceAccount identity in logs)
-- No kubeconfig secret management
+- Least privilege  
+- Auditable identity  
 
-**Trade-off:**
-- More setup complexity
-- Requires RBAC knowledge
+**Trade-off:**  
+- More upfront RBAC work  
 
-**When to use:** Always  
-**When to avoid:** Never - kubeconfig in CI is dangerous
+Using kubeconfig in CI is a footgun.
 
 ---
 
-## Chaos Tests
+## Chaos Experiments
 
-I designed and executed:
+Executed and documented:
 
-1. Pod CrashLoopBackOff (bad rollout)
-2. Node failure (local storage outage)
-3. Deployment → StatefulSet migration
-4. Memory OOM kill
-5. PostgreSQL monitoring instrumentation
+1. Bad rollout → `CrashLoopBackOff`  
+2. Node failure → local storage outage  
+3. Deployment → StatefulSet migration  
+4. Memory OOM kill  
+5. PostgreSQL observability gaps  
 
-Postmortems in `/postmortems/`.
+Postmortems are documented in `/postmortems`.
 
 ---
 
 ## Key Findings
 
 ### Node Failure
-- Local PV = single point of failure  
-- PostgreSQL unavailable for 25 hours  
+- PostgreSQL unavailable for **25 hours**  
 - Data intact but inaccessible  
 
-**Lesson:** HA storage or external DB required for production.
+**Lesson:** Local storage is unacceptable for production databases.
+
+---
 
 ### Memory OOM
-- Container killed at memory limit (137)  
-- Recovered in ~10 seconds  
+- Container killed at memory limit  
+- Recovery in ~10 seconds  
 - Multi-replica API remained available  
 
 **Lesson:** Memory limits are hard ceilings.
 
-### Cost vs Scaling
-- CPU <25% even at failure point  
-- Bottleneck was DB connections  
-- Infra scaling did not solve problem  
+---
 
-**Lesson:** Measure before scaling.
+### Scaling vs Reality
+- CPU usage remained under 25%  
+- Bottleneck was database connections  
+
+**Lesson:** Scaling infrastructure does not fix bad assumptions.
 
 ---
 
-## What I Can Now Do
+## What This Proves
 
-After completing this lab, I can now:
+After completing this lab, I can:
 
-### Platform Operations
-- Operate Kubernetes clusters without managed control planes
-- Design and provision storage for stateful workloads
-- Build Infrastructure as Code pipelines with Terraform
-- Implement GitOps-style deployment workflows
-
-### Security Engineering
-- Design and enforce pod-level security baselines across workloads
-- Implement least-privilege RBAC policies
-- Manage secrets without committing credentials to Git
-- Configure network isolation with NetworkPolicies
-
-### Chaos Engineering
-- Design systematic failure scenarios
-- Execute controlled chaos tests
-- Write SRE-style postmortems with root cause analysis
-- Validate system resilience through intentional breaking
-
-### Observability
-- Build metrics collection pipelines with Prometheus
-- Create operational dashboards in Grafana
-- Instrument applications for monitoring
-- Diagnose performance bottlenecks through metrics
-
-### Engineering Judgment
-- Evaluate infrastructure trade-offs (cost vs complexity vs capability)
-- Choose appropriate architectures for scale requirements
-- Identify when simple solutions outperform complex ones
-- Measure system behavior instead of assuming bottlenecks
+- Operate Kubernetes without managed control planes  
+- Design storage strategies for stateful workloads  
+- Apply least-privilege security across clusters  
+- Build observability before incidents occur  
+- Design and execute chaos experiments  
+- Write clear, actionable postmortems  
+- Make explicit trade-offs between cost, complexity, and risk  
 
 ---
 
-## Repository Layout
+## Repository Structure
+
 ```
 infrastructure/
-├── terraform/
-└── BUILD_LOG.md
+  terraform/
+  BUILD_LOG.md
 
 kubernetes/
-├── applications/
-│   ├── healthcare-api/
-│   └── postgresql/
-└── monitoring/
+  applications/
+  monitoring/
 
 postmortems/
 chaos/
@@ -294,58 +214,20 @@ docs/
 
 ## Rebuild Time
 
-Target: **< 4 hours**  
-Bare metal → functioning cluster
+**< 4 hours**  
+Bare metal → functioning cluster  
 
-I validated this during clean rebuilds.
-
----
-
-## Related Projects
-
-- Multi-node Kubernetes with Terraform  
-  https://github.com/ibraheemcisse/multi-node-kubernetes-cluster
-
-- AWS Infrastructure Trade-offs  
-  https://github.com/ibraheemcisse/devops-dashboard
-
-- KEDA Autoscaling on EKS  
-  https://github.com/ibraheemcisse/KEDA-HTTP-Add-On-with-Autoscaling-on-Kubernetes-EKS-
-
----
-
-## Demonstrates
-
-- Infrastructure provisioning  
-- Kubernetes security hardening  
-- Chaos engineering  
-- Postmortem-driven improvement  
-- Cost/performance analysis  
-
----
-
-## Does NOT Demonstrate
-
-- Multi-region HA  
-- Managed cloud platforms  
-- Enterprise-scale ops  
-- Perfect security  
-
-Learning environment, not reference architecture.
+Validated through clean rebuilds.
 
 ---
 
 ## Philosophy
 
-- Security is a posture  
-- Documentation reflects reality  
-- Chaos validates assumptions  
-- Trade-offs must be explicit  
-- Complexity requires justification  
-
----
-
-This project reflects how I approach engineering: build, break, measure, document, and iterate.
+- Assumptions fail before systems do  
+- Security is about blast radius  
+- Observability precedes reliability  
+- Chaos validates confidence  
+- Complexity must earn its place  
 
 ---
 
